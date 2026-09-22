@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "laya"
+version = "0.3.6"
+description = "Fast, non-autoregressive System 1 decision engine with calibrated probabilities"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Convai Innovations" }
+]
+keywords = ["decision-model", "rlcd", "calibration", "system-one", "routing", "guardrails", "moderation", "triage"]
+dependencies = [
+    "torch>=2.0.0",
+    "transformers>=4.48.0",
+    "safetensors>=0.4.0",
+    "huggingface_hub>=0.20.0",
+    "numpy>=1.20.0",
+]
+
+[project.scripts]
+laya = "laya.cli:main"
+
+[tool.setuptools]
+packages = ["laya"]
+
+[project.urls]
+Homepage = "https://huggingface.co/convaiinnovations/laya"
+Demo = "https://huggingface.co/spaces/convaiinnovations/laya-demo"
