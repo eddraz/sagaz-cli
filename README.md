@@ -46,6 +46,43 @@ Python 3.10 or newer. The dependencies set that floor: `huggingface_hub` 1.x, `t
 
 ---
 
+## CLI Usage
+
+Laya includes a command-line interface with interactive mode, Unix pipe support, and automatic model management:
+
+### Predict
+```bash
+# Inbound ticket triage using built-in presets (triage, email, guard, moderation, router):
+laya predict --state "Hola, me cobraron dos veces la suscripción" --preset triage
+
+# Quick yes/no boolean question (--noul):
+laya predict --state "El servidor principal se cayó" --noul "emergencia:¿Es una emergencia técnica crítica?"
+
+# Read state and questions from files (@ syntax):
+laya predict --state @ticket.json --questions @questions.json
+
+# Pure JSON output for Unix pipelines and jq:
+echo '{"message": "I want to cancel"}' | laya predict --preset triage --json
+
+# Extract single answer directly for shell scripts:
+laya predict --state "Factura pendiente" --preset triage --get intent
+```
+
+### Interactive REPL (Fast In-Memory Inference)
+Keeps the model resident in RAM (~1.28 GB) to avoid cold-start load times on CPU (~89 ms per query):
+```bash
+laya repl --preset triage
+```
+
+### Local Model Storage & Offline Mode
+Checkpoints are automatically stored in `~/models/laya/` on first use. If they already exist on disk, Laya runs 100% offline without re-downloading:
+```bash
+# Pre-download a checkpoint for offline use:
+laya download -m multilingual
+```
+
+---
+
 ## Quickstart: Route Mode (Recommended)
 
 Laya ships three checkpoints. The built-in **`Router`** is the recommended entry point: it evaluates any state in any language, automatically detects scripts and languages in sub-milliseconds, and dispatches to the optimal checkpoint in a single forward pass.
