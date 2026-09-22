@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "laya"
+name = "sagaz-cli"
 version = "0.3.6"
 description = "Fast, non-autoregressive System 1 decision engine with calibrated probabilities"
 readme = "README.md"
@@ -13,6 +13,12 @@ authors = [
     { name = "Convai Innovations" }
 ]
 keywords = ["decision-model", "rlcd", "calibration", "system-one", "routing", "guardrails", "moderation", "triage"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "torch>=2.0.0",
     "transformers>=4.48.0",
@@ -22,6 +28,7 @@ dependencies = [
 ]
 
 [project.scripts]
+sagaz = "laya.cli:main"
 laya = "laya.cli:main"
 
 [tool.setuptools]

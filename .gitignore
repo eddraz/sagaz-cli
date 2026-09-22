@@ -24,3 +24,4 @@ checkpoints/
 
 # OS artifacts
 .DS_Store
+packaging/*.spec

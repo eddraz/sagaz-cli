@@ -1,0 +1,166 @@
+name: Release
+
+# Tag a commit (e.g. v0.3.6) and push it: tests run, wheel+sdist build, standalone
+# binaries are produced for Linux x86_64 and macOS arm64, and everything is attached
+# to a GitHub Release. PyPI publishing is tag-gated and needs a one-time Trusted
+# Publisher (PyPI -> Publishing -> owner eddraz, repo laya, workflow release.yml,
+# environment pypi). `workflow_dispatch` runs everything except the publish jobs.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # create the GitHub Release
+  id-token: write        # PyPI trusted publishing
+
+env:
+  USE_TF: "0"
+  USE_TORCH: "1"
+
+jobs:
+  build:
+    name: tests + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip build twine
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+
+      - name: Tests must pass before anything is published
+        run: |
+          python tests/test_router.py
+          python tests/test_criteria.py
+          python tests/test_email.py
+          python tests/test_download.py
+          python tests/test_shortlist.py
+          python tests/test_decision_model.py
+          python tests/test_packaging.py
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Version matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          pkg=$(python -c "import re;print(re.search(r'version = \"(.*)\"', open('pyproject.toml').read()).group(1))")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "pyproject=$pkg tag=$tag"
+          test "$pkg" = "$tag" || { echo "::error::pyproject version $pkg does not match tag $tag"; exit 1; }
+
+      - run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  binaries:
+    name: binaries (${{ matrix.asset }})
+    needs: build          # only ship binaries of code whose tests just passed
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-x86_64
+          # macOS binaries must be built ON macOS: PyInstaller cannot cross-compile.
+          - os: macos-latest     # Apple Silicon (arm64)
+            asset: macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CPU-only runtime
+        run: |
+          python -m pip install --upgrade pip pyinstaller
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
+
+      # onedir, not onefile: a onefile bundle would re-extract ~1 GB to /tmp on every launch.
+      - name: Build standalone binary
+        run: |
+          pyinstaller --noconfirm --clean \
+            --name sagaz-cli \
+            --distpath dist/pyinstaller \
+            --workpath build/pyinstaller \
+            --specpath packaging \
+            --collect-all transformers \
+            --collect-all tokenizers \
+            --collect-all safetensors \
+            --collect-all huggingface_hub \
+            --collect-all laya \
+            packaging/sagaz_cli_entry.py
+
+      - name: Ad-hoc codesign (macOS Gatekeeper)
+        if: runner.os == 'macOS'
+        run: codesign --force --deep --sign - dist/pyinstaller/sagaz-cli/sagaz-cli
+
+      - name: Package
+        run: |
+          version=$(python -c "import re;print(re.search(r'version = \"(.*)\"', open('pyproject.toml').read()).group(1))")
+          tar -czf "sagaz-cli-${version}-${{ matrix.asset }}.tar.gz" -C dist/pyinstaller sagaz-cli
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sagaz-cli-${{ matrix.asset }}
+          path: sagaz-cli-*.tar.gz
+
+  pypi:
+    name: publish to PyPI
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+  github_release:
+    name: GitHub Release
+    needs: [build, binaries]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Stage release assets
+        run: |
+          mkdir -p upload
+          cp artifacts/dist/* upload/
+          cp artifacts/sagaz-cli-linux-x86_64/*.tar.gz upload/
+          cp artifacts/sagaz-cli-macos-arm64/*.tar.gz upload/
+          ls -lh upload/
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "release $GITHUB_REF_NAME already exists - uploading artifacts to it"
+            gh release upload "$GITHUB_REF_NAME" upload/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" upload/* \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes
+          fi
