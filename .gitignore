@@ -12,6 +12,7 @@ dist/
 .venv/
 env/
 venv/
+uv.lock
 
 # Testing cache
 .pytest_cache/

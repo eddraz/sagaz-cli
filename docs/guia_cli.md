@@ -1,29 +1,66 @@
-# Guía de Uso del CLI de Laya
+# Guía de Uso del CLI de Sagaz / Laya
 
-Laya incluye una interfaz de línea de comandos (`laya`) diseñada para clasificar texto, evaluar intenciones y tomar decisiones en tiempo real directamente desde tu terminal o scripts de automatización.
+Sagaz incluye una interfaz de línea de comandos (`sagaz`, con `laya` como alias) diseñada para clasificar texto, evaluar intenciones y tomar decisiones en tiempo real directamente desde tu terminal o scripts de automatización.
+
+---
+
+## Instalación y Configuración Inicial
+
+### Requisitos Previos
+- **Python**: `>= 3.10`
+- **Herramientas**: `git`, y opcionalmente `uv` (recomendado) o `pip`.
+
+### Paso 1: Clonar el repositorio
+```bash
+git clone https://github.com/eddraz/laya.git
+cd laya
+```
+
+### Paso 2: Crear el entorno e instalar dependencias
+
+#### Con `uv` (Más rápido):
+```bash
+uv venv
+
+# En Fish shell:
+source .venv/bin/activate.fish
+
+# En Bash o Zsh:
+source .venv/bin/activate
+
+uv pip install -e .
+```
+
+#### Con `python -m venv` tradicional:
+```bash
+python3 -m venv .venv
+
+# En Fish shell:
+source .venv/bin/activate.fish
+
+# En Bash o Zsh:
+source .venv/bin/activate
+
+pip install -e .
+```
+
+> [!TIP]
+> Si prefieres no activar el entorno manualmente, puedes anteponer `uv run` a cualquier comando de Laya:
+> ```bash
+> uv run laya predict --state "Hola" --preset triage
+> ```
 
 ---
 
 ## Ruta Rápida (Quick Path)
 
-### 1. Activar el entorno virtual
+> [!NOTE]
+> Puedes invocar todos los comandos utilizando indistintamente **`sagaz`** (comando principal) o **`laya`** (alias compatible).
 
-Si usas **Fish shell**:
-```fish
-source .venv/bin/activate.fish
-```
-
-Si usas **Bash / Zsh**:
-```bash
-source .venv/bin/activate
-```
-
-*(O ejecuta directamente con `uv run laya <comando>` sin necesidad de activar el entorno).*
-
-### 2. Evaluación rápida con un preset
+### 1. Evaluación rápida con un preset
 
 ```bash
-laya predict --state "Hola, me cobraron dos veces la suscripción este mes." --preset triage
+sagaz predict --state "Hola, me cobraron dos veces la suscripción este mes." --preset triage
 ```
 
 ### 3. Modo interactivo REPL (Inferencia ultrarrápida en memoria)
