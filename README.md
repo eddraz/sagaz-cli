@@ -44,6 +44,12 @@ pip install laya
 
 Python 3.10 or newer. The dependencies set that floor: `huggingface_hub` 1.x, `transformers` 5.x and `torch` 2.14 all require 3.10.
 
+## Documentation / Guías en Detalle
+
+- 📖 **[Guía Completa de la CLI](docs/guia_cli.md)**: Parámetros de `predict`, modo interactivo `repl`, presets, pipes de Unix y automatización en scripts.
+- 🎯 **[Preguntas, Primitivas y Presets](docs/preguntas_y_presets.md)**: Definición de preguntas `choice`, `score`, `noul`, formato `@preguntas.json` y catálogo de presets.
+- ⚙️ **[Arquitectura, Modelos y Rendimiento en CPU](docs/arquitectura_y_rendimiento.md)**: Paradigma System 1, almacenamiento centralizado en `~/models/laya/`, política de cero re-descargas y métricas en CPU.
+
 ---
 
 ## CLI Usage
