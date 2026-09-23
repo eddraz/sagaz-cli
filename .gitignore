@@ -25,4 +25,5 @@ checkpoints/
 
 # OS artifacts
 .DS_Store
+.serena/
 packaging/*.spec
